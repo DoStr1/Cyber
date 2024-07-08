@@ -1,0 +1,45 @@
+import socket
+import os
+
+client_socket = socket.socket()
+client_socket.connect(("127.0.0.1", 8820))
+def client_side():
+
+    com = input("Do you want to Download file or Upload file?")
+    if com.upper()== "DOWNLOAD":
+        download()
+    if com.upper()=="UPLOAD":
+        upload()
+    else:
+        print("Invalid command pls try again")
+
+
+
+def download():
+    global client_socket
+    file_name = input("Please write a file name")
+    length = len(file_name)
+    client_socket.send((str(length)+file_name).encode())
+
+    received_data = client_socket.recv(100).decode()
+    if received_data == "File is not Exist":
+        print(received_data)
+    else:
+        with open("Download/" + file_name, "wb") as file:
+            while received_data:
+                file.write(received_data.encode())
+                received_data = client_socket.recv(100).decode()
+
+    print("Done")
+
+
+def upload():
+    global client_socket
+    file_name = input("Please write a file name")
+    full_name = "Upload/"+file_name
+    if os.path.exists(full_name):
+        with open(full_name,"r")  as file:
+            client_socket.send(file.read().encode())
+    else:
+        print("File is not Exist")
+    print("Done")
