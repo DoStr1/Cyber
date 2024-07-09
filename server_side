@@ -1,0 +1,47 @@
+import socket
+import os
+
+def server_side():
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind(("127.0.0.1", 8820))
+    server_socket.listen()
+    print("Server is listening")
+    cs, address = server_socket.accept()
+    print(f"Connection from {address}")
+
+    received_data = cs.recv(1).decode()
+    if received_data == "U":
+        upload(cs)
+    elif received_data == "D":
+        download(cs)
+    cs.close()
+
+def upload(cs):
+    file_name = cs.recv(100).decode()
+    with open("Upload/" + file_name, 'wb') as file:
+        while True:
+            received_data = cs.recv(100)
+            if not received_data:
+                break
+            file.write(received_data)
+    print("Upload complete")
+
+def download(cs):
+    file_name = cs.recv(100).decode()
+    print(f"Requested file: {file_name}")
+    full_name = "server/" + file_name
+    if os.path.exists(full_name):
+        with open(full_name, 'rb') as file:
+            while True:
+                file_data = file.read(100)
+                if not file_data:
+                    break
+                cs.send(file_data)
+                print(f"Sent data: {file_data}")
+        cs.send(b'')  # Send empty bytes to indicate end of download
+    else:
+        cs.send("File does not exist".encode())
+    print("Download complete")
+
+
+server_side()

@@ -1,45 +1,58 @@
 import socket
 import os
 
-client_socket = socket.socket()
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect(("127.0.0.1", 8820))
-def client_side():
 
-    com = input("Do you want to Download file or Upload file?")
-    if com.upper()== "DOWNLOAD":
+def client_side():
+    global client_socket
+    com = input("Do you want to Download file or Upload file? (D/U): ").strip().upper()
+    if com == "D":
+        client_socket.send("D".encode())
         download()
-    if com.upper()=="UPLOAD":
+    elif com == "U":
+        client_socket.send("U".encode())
         upload()
     else:
-        print("Invalid command pls try again")
-
-
+        print("Invalid command, please try again")
+        client_side()
 
 def download():
     global client_socket
-    file_name = input("Please write a file name")
-    length = len(file_name)
-    client_socket.send((str(length)+file_name).encode())
+    file_name = input("Please enter the file name to download: ")
+    client_socket.send(file_name.encode())
 
-    received_data = client_socket.recv(100).decode()
-    if received_data == "File is not Exist":
+    received_data = client_socket.recv(100)
+    print(f"Initial response: {received_data}")
+    if received_data == b"File does not exist":
         print(received_data)
     else:
         with open("Download/" + file_name, "wb") as file:
-            while received_data:
-                file.write(received_data.encode())
-                received_data = client_socket.recv(100).decode()
-
-    print("Done")
+            while True:
+                print(f"Received data: {received_data}")
+                if not received_data:
+                    break
+                file.write(received_data)
+                received_data = client_socket.recv(100)
+        print("Download complete")
 
 
 def upload():
     global client_socket
-    file_name = input("Please write a file name")
-    full_name = "Upload/"+file_name
+    file_name = input("Please enter the file name to upload: ")
+    full_name = "client/" + file_name
     if os.path.exists(full_name):
-        with open(full_name,"r")  as file:
-            client_socket.send(file.read().encode())
+        client_socket.send(file_name.encode())
+        with open(full_name, "rb") as file:
+            while True:
+                file_data = file.read(100)
+                if not file_data:
+                    break
+                client_socket.send(file_data)
+        client_socket.send(b'')  # Send empty bytes to indicate end of upload
+        print("Upload complete")
     else:
-        print("File is not Exist")
-    print("Done")
+        print("File does not exist")
+
+client_side()
+
