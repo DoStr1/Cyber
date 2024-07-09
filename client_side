@@ -6,16 +6,18 @@ client_socket.connect(("127.0.0.1", 8820))
 
 def client_side():
     global client_socket
-    com = input("Do you want to Download file or Upload file? (D/U): ").strip().upper()
-    if com == "D":
-        client_socket.send("D".encode())
-        download()
-    elif com == "U":
-        client_socket.send("U".encode())
-        upload()
-    else:
-        print("Invalid command, please try again")
-        client_side()
+    while True:
+        com = input("Do you want to Download file or Upload file? (D/U) (Type 'exit' to quit): ").strip().upper()
+        if com == "EXIT":
+            break
+        elif com == "D":
+            client_socket.send("D".encode())
+            download()
+        elif com == "U":
+            client_socket.send("U".encode())
+            upload()
+        else:
+            print("Invalid command, please try again")
 
 def download():
     global client_socket
@@ -36,7 +38,6 @@ def download():
                 received_data = client_socket.recv(100)
         print("Download complete")
 
-
 def upload():
     global client_socket
     file_name = input("Please enter the file name to upload: ")
@@ -49,10 +50,9 @@ def upload():
                 if not file_data:
                     break
                 client_socket.send(file_data)
-        client_socket.send(b'')  # Send empty bytes to indicate end of upload
+        client_socket.send(b'') 
         print("Upload complete")
     else:
         print("File does not exist")
 
 client_side()
-

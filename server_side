@@ -6,15 +6,17 @@ def server_side():
     server_socket.bind(("127.0.0.1", 8820))
     server_socket.listen()
     print("Server is listening")
-    cs, address = server_socket.accept()
-    print(f"Connection from {address}")
 
-    received_data = cs.recv(1).decode()
-    if received_data == "U":
-        upload(cs)
-    elif received_data == "D":
-        download(cs)
-    cs.close()
+    while True:
+        cs, address = server_socket.accept()
+        print(f"Connection from {address}")
+
+        received_data = cs.recv(1).decode()
+        if received_data == "U":
+            upload(cs)
+        elif received_data == "D":
+            download(cs)
+        cs.close()
 
 def upload(cs):
     file_name = cs.recv(100).decode()
@@ -37,11 +39,9 @@ def download(cs):
                 if not file_data:
                     break
                 cs.send(file_data)
-                print(f"Sent data: {file_data}")
         cs.send(b'')  # Send empty bytes to indicate end of download
     else:
         cs.send("File does not exist".encode())
     print("Download complete")
-
 
 server_side()
