@@ -1,1 +1,38 @@
-print("hello")
+import socket
+from PIL import ImageGrab, Image
+import io
+
+# Параметры сервера
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+host_ip = '192.168.1.227'  # IP адрес сервера
+port = 9999  # Порт сервер
+
+server_socket.bind((host_ip, port))
+server_socket.listen(1)
+print('Listening at:', (host_ip, port))
+
+client_socket, client_address = server_socket.accept()
+print('Connected to:', client_address)
+
+try:
+    while True:
+        # Захват экрана
+        img = ImageGrab.grab()
+
+        # Преобразование из RGBA в RGB
+        if img.mode == 'RGBA':
+            img = img.convert('RGB')
+
+        buf = io.BytesIO()
+        img.save(buf, format='JPEG')
+        img_bytes = buf.getvalue()
+        
+        # Отправка длины изображения
+        client_socket.sendall(len(img_bytes).to_bytes(4, 'big'))
+        # Отправка изображения
+        client_socket.sendall(img_bytes)
+finally:
+    client_socket.close()
+    server_socket.close()
